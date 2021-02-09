@@ -24,7 +24,7 @@ CFLAGS = -O -D_OPEN_THREADS -D_XOPEN_SOURCE=600 \
          "-Wc,goff,xref,gonum,roconst,gonum,asm,asmlib('SYS1.MACLIB'),asmlib('CEE.SCEEMAC')" \
          -I . \
 
-LDFLAGS =
+LDFLAGS = -L../deps/libyaml/lib -lyaml
 export _C89_LSYSLIB=CEE.SCEELKEX:CEE.SCEELKED:SYS1.CSSLIB:CSF.SCSFMOD0
 
 # C source
@@ -35,18 +35,24 @@ OBJS = $(SRCS:%.c=%.o)
 # disable built-in rules
 MAKEFLAGS += --no-builtin-rules
 
+LIBYAML = ../deps/libyaml
+LIBYAMLA = ../deps/libyaml/lib/libyaml.a
+
 all: $(LAUNCHER_TARGET)
 
-$(LAUNCHER_TARGET): main.o
+$(LAUNCHER_TARGET): $(OBJS) $(LIBYAMLA)
 	mkdir -p $(dir $(LAUNCHER_TARGET))
-	$(LD) $(LDFLAGS) -o $(LAUNCHER_TARGET) $^ || { $(RM) $@; exit 1; }
+	$(LD) $(LDFLAGS) -o $(LAUNCHER_TARGET) $(OBJS) || { $(RM) $@; exit 1; }
 	# cp -X $(LAUNCHER_TARGET) "//'${USER}.DEV.LOADLIB(ZWELNCH)'"
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-.PHONY: clean
+$(LIBYAMLA):
+	$(MAKE) -C $(LIBYAML)
+
+.PHONY: clean libyaml
 clean:
 	$(RM) $(LAUNCHER_TARGET)
 	$(RM) $(OBJS) $(notdir $(OBJS:%.o=%.lst))
-
+	$(MAKE) -C $(LIBYAML) clean
